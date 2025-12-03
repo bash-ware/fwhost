@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' blob:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
 
     <title>Firmware Updater</title>
     <style>
@@ -26,7 +26,7 @@
 <body>
 
 <div class="box">
-    <h2>Device Updater v7.0 (Nuclear Fix)</h2>
+    <h2>Device Updater v8.0 (Skypack Fix)</h2>
     <p>1. Background should be <strong>GREEN</strong>.<br>
        2. Click the button to start.</p>
     
@@ -57,11 +57,10 @@
         }
 
         try {
-            log("1. Downloading Library (v1.2.3)...");
+            log("1. Downloading Library via Skypack...");
 
-            // 🟢 CHANGED: Using the specific stable version 1.2.3 (same as official demo)
-            // This avoids the 'latest' version bugs and bundling issues
-            const module = await import('https://unpkg.com/arduino-web-uploader@1.2.3/dist/arduino-web-uploader.js');
+            // 🟢 CHANGED: Using Skypack. This is a "Smart" CDN that finds the file for us.
+            const module = await import('https://cdn.skypack.dev/arduino-web-uploader');
             
             log("✅ Library Loaded Successfully!");
             
@@ -89,8 +88,9 @@
                 log("👉 CONNECTION FAILED.");
                 log("   Try this: Double-tap the RESET button on the board");
                 log("   immediately after clicking 'Connect'.");
-            } else if(err.message.includes("CSP")) {
-                 log("👉 SECURITY ERROR: GitHub is still blocking the script.");
+            } else if(err.message.includes("CSP") || err.message.includes("eval")) {
+                 log("👉 SECURITY ERROR: GitHub is blocking the script.");
+                 log("   Did you create the .nojekyll file?");
             }
         }
     }
