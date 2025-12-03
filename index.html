@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
+
     <title>Pro Micro Updater</title>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f0f0f0; }
@@ -10,7 +13,6 @@
         h2 { margin-top: 0; color: #333; }
         button { padding: 15px 30px; font-size: 18px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 6px; width: 100%; margin-top: 20px; transition: background 0.2s;}
         button:hover { background-color: #218838; }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
         
         #log { 
             background: #222; color: #0f0; 
@@ -25,15 +27,15 @@
 <body>
 
 <div class="box">
-    <h2>Pro Micro Updater (v11.0)</h2>
-    <p>Using <b>Avrgirl-Arduino</b> engine.</p>
+    <h2>Pro Micro Updater (v13.0)</h2>
+    <p>Using <b>Local Library File</b></p>
     
     <button id="flashBtn">Flash Firmware</button>
     
     <div id="log">System Ready.</div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@sienci/avrgirl-arduino@5.0.3/dist/avrgirl-arduino-global.js"></script>
+<script src="./avrgirl-arduino-global.js"></script>
 
 <script>
     const logBox = document.getElementById('log');
@@ -50,40 +52,40 @@
 
         // 1. Check if Library Loaded
         if (typeof window.AvrgirlArduino === 'undefined') {
-            log("❌ ERROR: Avrgirl library did not load!");
-            log("   Check your internet connection.");
+            log("❌ CRITICAL ERROR: Library failed to load.");
+            log("   Make sure the filename in <script src='...'> matches your repo file exactly!");
             return;
         }
 
         try {
             // 2. Download the .hex file
-            log("1. Downloading 'firmware.hex'...");
+            log("1. Reading 'firmware.hex'...");
             const response = await fetch('./firmware.hex');
-            if (!response.ok) throw new Error("Could not find firmware.hex");
+            if (!response.ok) throw new Error("Could not find firmware.hex file.");
             const fileBuffer = await response.arrayBuffer();
             log("✅ Firmware loaded (" + fileBuffer.byteLength + " bytes)");
 
             // 3. Setup the Flasher
-            // 'pro-micro' is the specific board name for your device
+            log("2. Preparing Flasher (Pro Micro)...");
             const avrgirl = new window.AvrgirlArduino({
                 board: 'pro-micro',
                 debug: true
             });
 
-            log("2. Opening Connection...");
-            log("👉 PLEASE SELECT YOUR DEVICE IN THE POPUP");
+            log("3. WAITING FOR USER...");
+            log("👉 Please click 'Connect' in the popup.");
+            log("👉 Select 'Arduino Micro' (or similar).");
             
             // 4. The Flash Command
-            // Avrgirl handles the connection inside the flash method
             avrgirl.flash(fileBuffer, (error) => {
                 if (error) {
                     console.error(error);
                     log("❌ FLASH FAILED:");
                     log(error.message);
                     
-                    if(error.message.includes("permissions")) {
-                        log("👉 HINT: You might need to select the device TWICE.");
-                        log("   (Once for the port, and once for the bootloader).");
+                    if(error.message.includes("permissions") || error.message.includes("Access denied")) {
+                        log("👉 HINT: The device reset!");
+                        log("   You might need to select the NEW port.");
                     }
                 } else {
                     log("✅✅ SUCCESS! Firmware Flashed.");
