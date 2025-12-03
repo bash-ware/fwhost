@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com blob:;">
+
     <title>Firmware Updater</title>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #eee; transition: background 1s; }
@@ -23,8 +26,8 @@
 <body>
 
 <div class="box">
-    <h2>Device Updater v5.0 (Stable)</h2>
-    <p>1. If background turns <strong>GREEN</strong>, Script is running.<br>
+    <h2>Device Updater v6.0 (CSP Fix)</h2>
+    <p>1. Background should be <strong>GREEN</strong>.<br>
        2. Click the button to start.</p>
     
     <button onclick="startProcess()">Connect & Update</button>
@@ -33,7 +36,7 @@
 </div>
 
 <script>
-    document.body.style.backgroundColor = "#d4edda"; // Visual check
+    document.body.style.backgroundColor = "#d4edda"; 
     const logBox = document.getElementById('console-log');
     
     function log(msg) {
@@ -56,16 +59,8 @@
         try {
             log("1. Downloading Library...");
 
-            // 🟢 FIXED: Using 'unpkg' with the @latest tag to avoid version errors
-            // We also added a backup URL in case the first one fails
-            let module;
-            try {
-                module = await import('https://unpkg.com/arduino-web-uploader@latest/dist/index.js');
-                log("   Primary CDN worked!");
-            } catch (e) {
-                log("   ⚠️ Primary CDN failed, trying backup...");
-                module = await import('https://cdn.jsdelivr.net/npm/arduino-web-uploader@latest/dist/index.js');
-            }
+            // Using the robust unpkg link
+            const module = await import('https://unpkg.com/arduino-web-uploader@latest/dist/index.js');
             
             log("✅ Library Loaded Successfully!");
             
@@ -75,7 +70,6 @@
             log("2. Opening Device Picker...");
             log("   Please select your 'Arduino Micro' in the popup.");
 
-            // Passing the file path
             await upload(boards.proMicro, './firmware.hex', (pct) => {
                 log(`   Uploading: ${Math.round(pct)}%`);
             });
@@ -94,6 +88,8 @@
                 log("👉 CONNECTION FAILED.");
                 log("   Try this: Double-tap the RESET button on the board");
                 log("   immediately after clicking 'Connect'.");
+            } else if(err.message.includes("CSP")) {
+                 log("👉 SECURITY ERROR: Browser blocked the library.");
             }
         }
     }
