@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firmware Updater</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f9; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 100%; }
+        h2 { margin-top: 0; color: #333; }
+        p { color: #666; margin-bottom: 20px; }
+        button { background-color: #007bff; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 6px; cursor: pointer; transition: background 0.2s; width: 100%; }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        #status { margin-top: 20px; font-weight: bold; color: #333; min-height: 24px; }
+        .progress-bar { width: 100%; height: 10px; background-color: #e0e0e0; border-radius: 5px; margin-top: 15px; overflow: hidden; display: none; }
+        .progress-fill { height: 100%; width: 0%; background-color: #28a745; transition: width 0.2s; }
+        .error { color: #dc3545 !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Device Updater</h2>
+    <p>Plug in your device via USB and click the button below to update.</p>
+    
+    <button id="connectBtn">Connect & Update</button>
+    
+    <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+    
+    <div id="status"></div>
+</div>
+
+<script type="module">
+    import { upload, boards } from 'https://esm.sh/arduino-web-uploader?bundle';
+
+    const btn = document.getElementById('connectBtn');
+    const status = document.getElementById('status');
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+
+    // This looks for "firmware.hex" in the same folder
+    const FIRMWARE_URL = './firmware.hex';
+
+    btn.addEventListener('click', async () => {
+        // Reset UI
+        status.textContent = '';
+        status.className = '';
+        progressBar.style.display = 'none';
+        progressFill.style.width = '0%';
+
+        // Check Browser Support
+        if (!navigator.serial) {
+            status.textContent = "Error: Your browser does not support Web Serial. Please use Google Chrome, Edge, or Opera.";
+            status.className = "error";
+            return;
+        }
+
+        try {
+            status.textContent = "Requesting device...";
+            
+            // Start the upload
+            await upload(boards.proMicro, FIRMWARE_URL, (percentage) => {
+                progressBar.style.display = 'block';
+                progressFill.style.width = percentage + '%';
+                status.textContent = `Uploading: ${Math.round(percentage)}%`;
+            });
+
+            // Success
+            status.textContent = "✅ Update Complete!";
+            btn.textContent = "Update Another Device";
+
+        } catch (err) {
+            console.error(err);
+            status.className = "error";
+            status.textContent = "Error: " + err.message;
+
+            if (err.message.includes("Failed to open")) {
+                status.textContent += " (Try double-pressing the Reset button!)";
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
